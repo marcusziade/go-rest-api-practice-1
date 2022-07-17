@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/marcusziade/go-rest-api-practice-1/comment"
 	"github.com/marcusziade/go-rest-api-practice-1/database"
 	"github.com/marcusziade/go-rest-api-practice-1/transport"
 )
@@ -17,14 +18,19 @@ func (app *App) Run() error {
 	fmt.Println("Setting Up Our APP")
 
 	var error error
-	database, error := database.NewDatabase()
+	newDatabase, error := database.NewDatabase()
 	if error != nil {
 		return error
 	}
 
-	println(database.Value)
+	error = database.MigrateDatabase(newDatabase)
+	if error != nil {
+		return error
+	}
 
-	handler := transport.NewHandler()
+	commentService := comment.NewService(newDatabase)
+
+	handler := transport.NewHandler(commentService)
 	handler.SetupRoutes()
 
 	if error := http.ListenAndServe(":8080", handler.Router); error != nil {
@@ -39,7 +45,7 @@ func main() {
 	fmt.Println("Go REST API Course")
 	app := App{}
 	if error := app.Run(); error != nil {
-		fmt.Println("Error starting up our REST API")
+		fmt.Println("Error starting up the REST API")
 		fmt.Println(error)
 	}
 }
